@@ -1,0 +1,46 @@
+/*
+ * kitten images copyrights:
+ *
+ * kitten1.jpg - http://flickr.com/photos/nicsuzor/
+ * kitten2.jpg, kitten8.jpg - http://flickr.com/photos/titrans/
+ * kitten4.jpg - http://flickr.com/photos/nperlapro/
+ * kitten5.jpg, kitten6.jpg - http://flickr.com/photos/lachlanrogers/
+ * kitten7.jpg - http://flickr.com/photos/olaeinang/
+ *
+ */
+
+.kitten:hover {
+	background-image: url(kitten1.jpg);
+}
+
+.kitten:active {
+	background-image: url(kitten2.jpg);
+}
+
+.more {
+	background-image: url(kitten5.jpg);
+}
+
+.this {
+	background-image: url(kitten7.jpg);
+}
+
+@media screen and (min-width: 0px) {
+	
+	.kitten.other:hover {
+		background: url(kitten3.jpg) no-repeat 50% 50%;
+	}
+
+	.more {
+		background: url(kitten6.jpg);
+	}
+
+	.kitten.other.media:active {
+		background: url(kitten4.jpg) no-repeat 50% 50%;
+	}
+
+	.that {
+		background: url(kitten8.jpg);
+	}
+
+}
