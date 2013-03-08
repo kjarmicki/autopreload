@@ -85,24 +85,29 @@
 
 			// return formatted absolute path for file
 			_getFullPathSource: function(style, fileRoot) {
+
+				var match;
 			
 				style = style.replace(/\"/g, '').replace('url(', '').replace(')', '');
 
 				if(style.indexOf(fileRoot) !== 0) {
-					
 					if(style[0] === '/') {
 						style = this._getFileDomain(fileRoot) + style;
 					}
-					else if(!style.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g)) {
-						style = fileRoot + style;
+					else {
+						match = style.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g);
+						if(!match || (match.length === 1 && !match[0])) {
+							style = fileRoot + style;
+						}
 					}
-
+						
 				}
-				
+
 
 				return style;
 			},
 
+			// get filename from style
 			_getFileName: function(style) {
 
 				style = style.replace(/\"/g, '').replace('url(', '').replace(')', '');
@@ -116,8 +121,15 @@
 				return style;
 			},
 
+			// get domain and protocol from path
 			_getFileDomain: function(path) {
-					
+
+				var protocol = path.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g)[0];
+
+				path = path.replace(protocol, '');
+				path = path.substr(0, path.indexOf('/'));
+
+				return protocol + path;
 			},
 
 			// recursively walk through document.styleSheets and it's subtrees
@@ -179,8 +191,8 @@
 							}
 						}
 					}
+					// otherwise (yup, IE), iterate through properties until it's something that resembles background-image
 					else {
-						// otherwise (yup, IE), iterate through properties until it's something that resembles background-image
 						for(style in node.style) {
 							if(
 								node.style[style] && 
@@ -188,8 +200,8 @@
 								node.style[style].indexOf('url(') === 0 && 
 								node.style[style].indexOf(')') === node.style[style].length - 1
 							) {
-								fullPath = this._getFullPathSource(style, fileRoot);
-								fileName = this._getFileName(style);
+								fullPath = this._getFullPathSource(node.style[style], fileRoot);
+								fileName = this._getFileName(node.style[style]);
 								if(
 									this._sources.indexOf(fullPath) === -1 &&
 									!this._userDefined.is('images', 'ignore', fileName) &&
