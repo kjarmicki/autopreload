@@ -1,5 +1,5 @@
 /*
- * autopreload.js v0.1
+ * autopreload.js v0.2
  *
  *
  * Purpose of this utility is to automatically preload images 
@@ -28,25 +28,43 @@
 
 			_loaded: 0, // images loaded so far
 
-			// management of user-defined selectors
-			_userSelectors: { 
+			// management of user-defined images
+			_userDefined: { 
 
-				modify: function(action, selector) {
+				modify: function(topic, action, items) {
 					var i;
 
-					if(Object.prototype.toString.call(selector) === '[object Array]') {
-						for(i = 0; i < selector.length; i++) {
-							this.modify(action, selector[i]);
+					if(Object.prototype.toString.call(items) === '[object Array]') {
+						for(i = 0; i < items.length; i++) {
+							this.modify(topic, action, items[i]);
 						}
 					}
-					else if(this[action].indexOf('selector') === -1) {
-						this[action].push(selector);
+					else if(this[topic][action].indexOf(items) === -1) {
+						this[topic][action].push(items);
 					}
 				},
 
-				add: [],
+				is: function(topic, action, item) {
+					var i;
 
-				ignore: []
+					for(i = 0; i < this[topic][action].length; i++) {
+						if(this[topic][action][i] === item) {
+							return true;	
+						}
+					}
+					
+					return false;
+
+				},
+
+				images: {
+					add: [],
+					ignore: []	
+				},
+
+				files: {
+					ignore: []	
+				}
 
 			},
 
@@ -66,17 +84,40 @@
 			},
 
 			// return formatted absolute path for file
-			_fullPathSource: function(style, fileRoot) {
+			_getFullPathSource: function(style, fileRoot) {
 			
-				style = style.replace(/\"/g, '');
-				if(style.indexOf(fileRoot) === -1) {
-					style = style.replace('url(', fileRoot).replace(')', '');
+				style = style.replace(/\"/g, '').replace('url(', '').replace(')', '');
+
+				if(style.indexOf(fileRoot) !== 0) {
+					
+					if(style[0] === '/') {
+						style = this._getFileDomain(fileRoot) + style;
+					}
+					else if(!style.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g)) {
+						style = fileRoot + style;
+					}
+
 				}
-				else {
-					style = style.replace('url(', '').replace(')', '');
+				
+
+				return style;
+			},
+
+			_getFileName: function(style) {
+
+				style = style.replace(/\"/g, '').replace('url(', '').replace(')', '');
+				
+				// if source contains path, get rid of a path
+				if(style.indexOf('data:') !== 0 && style.indexOf('/') > -1) {
+					style = style.split('').reverse().join('');
+					style = style.substr(0, style.indexOf('/')).split('').reverse().join('');
 				}
 
 				return style;
+			},
+
+			_getFileDomain: function(path) {
+					
 			},
 
 			// recursively walk through document.styleSheets and it's subtrees
@@ -102,48 +143,64 @@
 
 				var i,
 					style,
-					foundSelector = false;
+					fullPath,
+					fileName,
+					checkUserAdded = false,
+					searchCurrentNode = false;
 
-				// perform extraction only if current selector is not on ignore list
-				if(this._userSelectors.ignore.indexOf(node.selectorText) === -1) {
-
-					for(i = 0; i < this._states.length; i++) {
-						if(node.selectorText.indexOf(this._states[i]) > -1) {
-							foundSelector = true;	
-						}
+				for(i = 0; i < this._states.length; i++) {
+					if(node.selectorText.indexOf(this._states[i]) > -1) {
+						searchCurrentNode = true;	
 					}
+				}
+			
+				// if there are user-defined images to be found, force search
+				if(!searchCurrentNode && this._userDefined.images.add.length > 0) {
+					searchCurrentNode = true;
+					checkUserAdded = true;
+				}
+
+				if(searchCurrentNode) {
+
 				
-					if(!foundSelector) {
-						if(this._userSelectors.add.indexOf(node.selectorText) > -1) {
-							foundSelector = true;	
-						}						
-					}
-
-					if(foundSelector) {
-					
-						// if there is a possibility to get straight to property value, try it	
-						if(typeof node.style.getPropertyValue === 'function') {
-							style = node.style.getPropertyValue('background-image');
-							if(style && this._sources.indexOf(this._fullPathSource(style, fileRoot)) === -1) {
-								this._sources.push(this._fullPathSource(style, fileRoot));
+					// if there is a possibility to get straight to property value, try it	
+					if(typeof node.style.getPropertyValue === 'function') {
+						style = node.style.getPropertyValue('background-image');
+						if(style) {
+							fullPath = this._getFullPathSource(style, fileRoot);
+							fileName = this._getFileName(style);
+							if(
+								this._sources.indexOf(fullPath) === -1 && 
+								!this._userDefined.is('images', 'ignore', fileName) &&
+								fileName.indexOf('data:') !== 0  &&
+								((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
+							) {
+								this._sources.push(fullPath);
 							}
 						}
-						else {
-							// otherwise (yup, IE), iterate through properties until it's something that resembles background-image
-							for(style in node.style) {
+					}
+					else {
+						// otherwise (yup, IE), iterate through properties until it's something that resembles background-image
+						for(style in node.style) {
+							if(
+								node.style[style] && 
+								typeof node.style[style] === 'string' && 
+								node.style[style].indexOf('url(') === 0 && 
+								node.style[style].indexOf(')') === node.style[style].length - 1
+							) {
+								fullPath = this._getFullPathSource(style, fileRoot);
+								fileName = this._getFileName(style);
 								if(
-									node.style[style] && 
-									typeof node.style[style] === 'string' && 
-									node.style[style].indexOf('url(') === 0 && 
-									node.style[style].indexOf(')') === node.style[style].length - 1 && 
-									this._sources.indexOf(this._fullPathSource(node.style[style], fileRoot)) === -1
+									this._sources.indexOf(fullPath) === -1 &&
+									!this._userDefined.is('images', 'ignore', fileName) &&
+									fileName.indexOf('data:') !== 0 &&
+									((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
 								) {
-									this._sources.push(this._fullPathSource(node.style[style], fileRoot));
+									this._sources.push(fullPath);
 								}
 							}
 						}
 					}
-
 				}	
 
 			},
@@ -156,7 +213,9 @@
 				this._sources.length = 0;
 
 				for(i = 0; i < win.document.styleSheets.length; i++) {
-					this._walkSubtree(win.document.styleSheets[i], this._getFileDir(win.document.styleSheets[i].href));
+					if(!this._userDefined.is('files', 'ignore', this._getFileName(win.document.styleSheets[i].href))) {
+						this._walkSubtree(win.document.styleSheets[i], this._getFileDir(win.document.styleSheets[i].href));
+					}
 				}
 
 				return this._sources;
@@ -188,20 +247,29 @@
 
 			/* public properties */
 
-			// add selector(s) to seek for 
+			// add image(s) to seek for 
 			// chainable
-			add: function(selectors) {
+			addImages: function(images) {
 			
-				this._userSelectors.modify('add', selectors);
+				this._userDefined.modify('images', 'add', images);
 
 				return this;
 			},
 
-			// add selector(s) to ignore 
+			// add image(s) to ignore 
 			// chainable
-			ignore: function(selectors) {
+			ignoreImages: function(images) {
 			
-				this._userSelectors.modify('ignore', selectors);
+				this._userDefined.modify('images', 'ignore', images);
+
+				return this;
+			},
+
+			// add file(s) to ignore 
+			// chainable
+			ignoreFiles: function(files) {
+				
+				this._userDefined.modify('files', 'ignore', files);
 
 				return this;
 			},
@@ -232,7 +300,12 @@
 			// chainable
 			reset: function() {
 
-				this._userSelectors.add.length = this._userSelectors.ignore.length = this._sources.length = this._loaded = 0;
+				var i;
+
+				this._userDefined.images.add.length = this._userDefined.images.ignore.length = this._userDefined.files.ignore.length = this._sources.length = this._loaded = 0;
+				for(i = 0; i < this._images.length; i++) {
+					this._images[i].onload = function() { };
+				}
 				this._images = [];
 				this._onload = null;
 
@@ -243,18 +316,33 @@
 
 		// mini-shims for crappy browsers, drop when Array.indexOf and Function.bind become safe to assume
 		if(!Array.prototype.indexOf) {
+
+			(function(_inner) {
+
+				var toDecorate = [
+						_inner._userDefined.images.add,
+						_inner._userDefined.images.ignore,
+						_inner._userDefined.files.ignore,
+						_inner._sources		
+					],
+					i;
 			
-			_inner._userSelectors.add.indexOf = _inner._userSelectors.ignore.indexOf = _inner._sources.indexOf = function(value) {
+				for(i = 0; i < toDecorate.length; i++) {
+					
+					toDecorate[i].indexOf = function(value) {
 				
-				var i;
-				for(i = 0; i < this.length; i++) {
-					if(this[i] === value) {
-						return value;	
-					}
+						var i;
+						for(i = 0; i < this.length; i++) {
+							if(this[i] === value) {
+								return value;	
+							}
+						}
+
+						return -1;
+					};
 				}
 
-				return -1;
-			};
+			}(_inner));
 		}
 
 		var _bind = function() {
@@ -274,8 +362,9 @@
 		return {
 			run: _bind(_inner.run, _inner),
 			getSources: _bind(_inner.getSources, _inner),
-			add: _bind(_inner.add, _inner),
-			ignore: _bind(_inner.ignore, _inner),
+			addImages: _bind(_inner.addImages, _inner),
+			ignoreImages: _bind(_inner.ignoreImages, _inner),
+			ignoreFiles: _bind(_inner.ignoreFiles, _inner),
 			onload: _bind(_inner.onload, _inner),
 			reset: _bind(_inner.reset, _inner)
 		};
