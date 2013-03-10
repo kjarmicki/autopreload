@@ -113,4 +113,4 @@ You can pass a single callback to `onload` method and it will be called when all
 
 This tool should work fine with IE8+ and current versions of Firefox, Chrome, Safari and Opera.
 
-Keep in mind that there were no attempts to fix missing features in old browsers, so in IE8 media queries are entirely ignored. This can be fixed with other external libraries (like respond.js), but keep in mind that in general they load missing styles asynchronously, so you have to make sure you're calling `autopreload.run()` when all the additional stylesheets are loaded.
+Keep in mind that there were no attempts to fix missing features in old browsers, so in IE8 media queries are entirely ignored. This can be fixed with other external libraries (like respond.js), but note that in general they load missing styles asynchronously, so you have to make sure you're calling `autopreload.run()` when all the additional stylesheets are loaded.
