@@ -155,8 +155,6 @@
 
 				var	i,
 					style,
-					fullPath,
-					fileName,
 					checkUserAdded = false,
 					searchCurrentNode = false;
 
