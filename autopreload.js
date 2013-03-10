@@ -1,5 +1,5 @@
 /*
- * autopreload.js v0.2
+ * autopreload.js v0.3
  *
  *
  * Purpose of this utility is to automatically preload images 
@@ -174,21 +174,11 @@
 
 				if(searchCurrentNode) {
 
-				
 					// if there is a possibility to get straight to property value, try it	
 					if(typeof node.style.getPropertyValue === 'function') {
 						style = node.style.getPropertyValue('background-image');
 						if(style) {
-							fullPath = this._getFullPathSource(style, fileRoot);
-							fileName = this._getFileName(style);
-							if(
-								this._sources.indexOf(fullPath) === -1 && 
-								!this._userDefined.is('images', 'ignore', fileName) &&
-								fileName.indexOf('data:') !== 0  &&
-								((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
-							) {
-								this._sources.push(fullPath);
-							}
+							this._tryPush(style, fileRoot, checkUserAdded);
 						}
 					}
 					// otherwise (yup, IE), iterate through properties until it's something that resembles background-image
@@ -200,20 +190,28 @@
 								node.style[style].indexOf('url(') === 0 && 
 								node.style[style].indexOf(')') === node.style[style].length - 1
 							) {
-								fullPath = this._getFullPathSource(node.style[style], fileRoot);
-								fileName = this._getFileName(node.style[style]);
-								if(
-									this._sources.indexOf(fullPath) === -1 &&
-									!this._userDefined.is('images', 'ignore', fileName) &&
-									fileName.indexOf('data:') !== 0 &&
-									((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
-								) {
-									this._sources.push(fullPath);
-								}
+								this._tryPush(node.style[style], fileRoot);
 							}
 						}
 					}
 				}	
+
+			},
+
+			// conditionally push source into sources array
+			_tryPush: function(style, fileRoot, checkUserAdded) {
+
+				var	fullPath = this._getFullPathSource(style, fileRoot),
+					fileName = this._getFileName(style);
+				
+				if(
+					this._sources.indexOf(fullPath) === -1 && 
+					!this._userDefined.is('images', 'ignore', fileName) &&
+					fileName.indexOf('data:') !== 0  &&
+					((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
+				) {
+					this._sources.push(fullPath);
+				}
 
 			},
 
