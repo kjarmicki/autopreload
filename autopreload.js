@@ -153,7 +153,7 @@
 			// extract file urls from subtree
 			_extractUrls: function(node, fileRoot) {
 
-				var i,
+				var	i,
 					style,
 					fullPath,
 					fileName,
