@@ -17,7 +17,7 @@ Consider following rules:
 }
  ```
 
-If user the does not have `image-hover.png` cached, the browser will make an HTTP request to the server to grab that image. Visual result of this is unpleasant flicker effect - while `image-hover.png` is loading, the background will disappear entirely. Most of the time it looks awful.
+If the user does not have `image-hover.png` cached, the browser will make an HTTP request to the server to grab that image. Visual result of this is unpleasant flicker effect - while `image-hover.png` is loading, the background will disappear entirely. Most of the time it looks awful.
 
 
 ## Solutions
