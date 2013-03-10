@@ -218,7 +218,7 @@
 			},
 
 			// gather sources from available stylesheets
-			getSources: function() {
+			_getSources: function() {
 
 				var	i;
 
@@ -290,7 +290,7 @@
 			// not chainable, inteded to call as a last method in chain
 			run: function() {
 
-				this.getSources();
+				this._getSources();
 
 				return this._createImages();
 				
@@ -373,7 +373,6 @@
 		// public interface
 		return {
 			run: _bind(_inner.run, _inner),
-			getSources: _bind(_inner.getSources, _inner),
 			addImages: _bind(_inner.addImages, _inner),
 			ignoreImages: _bind(_inner.ignoreImages, _inner),
 			ignoreFiles: _bind(_inner.ignoreFiles, _inner),
