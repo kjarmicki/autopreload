@@ -13,6 +13,33 @@
 
 	'use strict';
 
+	// mini-shims for crappy browsers, drop when Array.indexOf and Function.bind become safe to assume
+	var _indexOf = function(arr, value) {
+			
+		var i;
+			
+		for(i = 0; i < arr.length; i++) {
+			if(arr[i] === value) {
+				return i;	
+			}
+		}
+
+		return -1;	
+	};
+
+	var _bind = function() {
+
+		var	args = Array.prototype.slice.call(arguments),
+			func = args.shift(),
+			ctx = args.shift();
+
+		return function() {
+			return func.apply(ctx, arguments);
+		};	
+	};
+
+
+
 	// inject public interface into global object as autopreload
 	win.autopreload = (function(win) {
 
@@ -39,7 +66,7 @@
 							this.modify(topic, action, items[i]);
 						}
 					}
-					else if(this[topic][action].indexOf(items) === -1) {
+					else if(_indexOf(this[topic][action], items) === -1) {
 						this[topic][action].push(items);
 					}
 				},
@@ -188,7 +215,7 @@
 								node.style[style].indexOf('url(') === 0 && 
 								node.style[style].indexOf(')') === node.style[style].length - 1
 							) {
-								this._tryPush(node.style[style], fileRoot);
+								this._tryPush(node.style[style], fileRoot, checkUserAdded);
 							}
 						}
 					}
@@ -201,9 +228,9 @@
 
 				var	fullPath = this._getFullPathSource(style, fileRoot),
 					fileName = this._getFileName(style);
-				
+
 				if(
-					this._sources.indexOf(fullPath) === -1 && 
+					_indexOf(this._sources, fullPath) === -1 && 
 					!this._userDefined.is('images', 'ignore', fileName) &&
 					fileName.indexOf('data:') !== 0  &&
 					((checkUserAdded) ? this._userDefined.is('images', 'add', fileName) : true)
@@ -310,10 +337,16 @@
 
 				var i;
 
-				this._userDefined.images.add.length = this._userDefined.images.ignore.length = this._userDefined.files.ignore.length = this._sources.length = this._loaded = 0;
+				this._userDefined.images.add.length = 
+				this._userDefined.images.ignore.length = 
+				this._userDefined.files.ignore.length = 
+				this._sources.length = 
+				this._loaded = 0;
+
 				for(i = 0; i < this._images.length; i++) {
-					this._images[i].onload = function() { };
+					this._images[i].onload = null;
 				}
+
 				this._images = [];
 				this._onload = null;
 
@@ -321,49 +354,6 @@
 			}
 
 		};
-
-		// mini-shims for crappy browsers, drop when Array.indexOf and Function.bind become safe to assume
-		if(!Array.prototype.indexOf) {
-
-			(function(_inner) {
-
-				var toDecorate = [
-						_inner._userDefined.images.add,
-						_inner._userDefined.images.ignore,
-						_inner._userDefined.files.ignore,
-						_inner._sources		
-					],
-					i;
-			
-				for(i = 0; i < toDecorate.length; i++) {
-					
-					toDecorate[i].indexOf = function(value) {
-				
-						var i;
-						for(i = 0; i < this.length; i++) {
-							if(this[i] === value) {
-								return value;	
-							}
-						}
-
-						return -1;
-					};
-				}
-
-			}(_inner));
-		}
-
-		var _bind = function() {
-
-			var	args = Array.prototype.slice.call(arguments),
-				func = args.shift(),
-				ctx = args.shift();
-
-			return function() {
-				return func.apply(ctx, arguments);
-			};	
-		};
-
 
 
 		// public interface
