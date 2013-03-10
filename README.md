@@ -87,7 +87,7 @@ autopreload.ignoreImages('image-hover.png').run();
 
 #### Ignoring files
 
-Just like with images, you can ignore whole CSS files with chainable `.ignoreImages()` method. This method accepts single image as a string or multiple images as an array, for example:
+Just like with images, you can ignore whole CSS files with chainable `.ignoreFiles()` method. This method accepts single file as a string or multiple files as an array, for example:
 
  ```javascript
 autopreload.ignoreFiles(['jquery-ui.css', 'tooltip.css']).run();
