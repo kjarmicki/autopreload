@@ -95,7 +95,7 @@
 						style = this._getFileDomain(fileRoot) + style;
 					}
 					else {
-						match = style.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g);
+						match = style.match(/^(?:http(s?)\:\/\/)?/g);
 						if(!match || (match.length === 1 && !match[0])) {
 							style = fileRoot + style;
 						}
@@ -124,7 +124,7 @@
 			// get domain and protocol from path
 			_getFileDomain: function(path) {
 
-				var protocol = path.match(/^(?:(ht|f)tp(s?)\:\/\/)?/g)[0];
+				var protocol = path.match(/^(?:http(s?)\:\/\/)?/g)[0];
 
 				path = path.replace(protocol, '');
 				path = path.substr(0, path.indexOf('/'));
@@ -244,7 +244,7 @@
 				
 				for(i = 0; i < this._sources.length; i++) {
 					this._images[i] = win.document.createElement('img');
-					this._images[i].onload = function() {
+					this._images[i].onload = this._images[i].onerror = function() {
 						if(++that._loaded === that._sources.length && typeof that._onload === 'function') {
 							that._onload.call(that, that._images);
 						}
